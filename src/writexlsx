@@ -1,0 +1,66 @@
+#!/usr/bin/env Rscript
+#' @author dzyim.liang
+
+library(data.table)
+library(xlsx)
+
+writexlsx <- function(infile, outfile, sheetName = "Sheet1", col.names = FALSE, 
+			sep = "\t", row.names = FALSE, showNA = FALSE) 
+{
+	NA_VALUES = c("")
+	USAGE = "\nUsage:
+	writexlsx  <infile> <outfile> [sheetName=Sheet1] [col.names=F]
+	writexlsx  -  <outfile> [sheetName] [col.names]  <  <infile>
+	cat <infile> | writexlsx  -  <outfile> [sheetName] [col.names]
+	"
+	if (missing(infile)) {
+		write(USAGE, stderr())
+		quit(status = 1)
+	} else if (length(infile) != 1) {
+		write(USAGE, stderr())
+		quit(status = 1)
+	} else if (is.na(infile)) {
+		write(USAGE, stderr())
+		quit(status = 1)
+	} else if (infile == "-") {
+		infile = paste(readLines("stdin"), collapse = "\n")
+	} else if (startsWith(infile, "-")) {
+		write(USAGE, stderr())
+		quit(status = 1)
+	} else if (!file.exists(infile)) {
+		write("[ERROR] The input file does not exist!", stderr())
+		quit(status = 1)
+	}
+	if (missing(outfile)) {
+		write(USAGE, stderr())
+		quit(status = 1)
+	} else if (length(outfile) != 1) {
+		write(USAGE, stderr())
+		quit(status = 1)
+	} else if (is.na(outfile)) {
+		write(USAGE, stderr())
+		quit(status = 1)
+	} else if (startsWith(outfile, "-")) {
+		write(USAGE, stderr())
+		quit(status = 1)
+	} else if (file.exists(outfile)) {
+		append = TRUE
+	} else {
+		append = FALSE
+	}
+	if (is.na(sheetName)) {
+		sheetName = "Sheet1"
+	}
+	if (is.na(col.names)) {
+		col.names = FALSE
+	}
+	E = fread(infile, sep = sep, header = col.names, na.strings = NA_VALUES)
+	write.xlsx2(E, file = outfile, sheetName = sheetName, 
+			col.names = col.names, row.names = row.names, 
+			append = append, showNA = showNA)
+}
+
+if (sys.nframe() == 0) {
+	Args = commandArgs(TRUE)
+	writexlsx(Args[1], Args[2], Args[3], Args[4])
+}
